@@ -7,7 +7,7 @@ from urllib.request import urlopen
 from unittest.mock import patch
 from http.server import ThreadingHTTPServer
 import providers
-from bot import active_event, build_asset, get_config, live_guards, load_events, make_handler
+from bot import ROOT, active_event, build_asset, get_config, live_guards, load_events, make_handler
 
 
 class ProviderTests(unittest.TestCase):
@@ -130,7 +130,7 @@ class HttpTests(unittest.TestCase):
         self.assertIn('book down', guards[0]['note'])
 
     def test_event_window_and_wide_spread_veto_live_signal(self):
-        calendar = load_events('events.json')
+        calendar = load_events(ROOT / 'events.json')
         fomc = next(e for e in calendar['events'] if e['time'] > 1780000000)
         self.assertEqual(calendar['before'], 3600)
         self.assertIsNone(active_event(calendar, fomc['time'] - 3601))

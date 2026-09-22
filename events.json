@@ -1,0 +1,15 @@
+{
+  "_comment": "Scheduled macro announcements (UTC). The bot withholds signals from window_before_min before to window_after_min after each. Verify FOMC dates at federalreserve.gov and add CPI/NFP releases yourself if wanted.",
+  "window_before_min": 60,
+  "window_after_min": 120,
+  "events": [
+    {"name": "FOMC statement", "time": "2026-01-28T19:00:00Z"},
+    {"name": "FOMC statement", "time": "2026-03-18T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2026-04-29T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2026-06-17T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2026-07-29T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2026-09-16T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2026-10-28T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2026-12-09T19:00:00Z"}
+  ]
+}
