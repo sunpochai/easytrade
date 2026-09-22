@@ -8,6 +8,3 @@ services:
     startCommand: "python bot.py --host 0.0.0.0 --source api"
     healthCheckPath: /api/health
     autoDeploy: true
-    envVars:
-      - key: TWELVE_DATA_API_KEY
-        sync: false

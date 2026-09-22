@@ -1,7 +1,7 @@
 {
-  "name": "EasyTrade BTC & Gold",
+  "name": "EasyTrade BTC",
   "short_name": "EasyTrade",
-  "description": "บอทแนะนำ BTC และทองจากกฎวิเคราะห์เทคนิค พร้อมผลทดสอบย้อนหลัง",
+  "description": "บอทแนะนำ BTC จากกฎวิเคราะห์เทคนิค พร้อมผลทดสอบย้อนหลัง",
   "lang": "th",
   "start_url": "/",
   "scope": "/",

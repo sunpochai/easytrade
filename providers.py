@@ -1,10 +1,8 @@
 """Read-only HTTPS market adapters. No exchange credentials or order endpoints."""
 import json
-import os
 import random
 import threading
 import time
-from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -50,30 +48,6 @@ def binance_bars(timeframe, now=None):
                 for r in payload if int(r[0])/1000 + TIMEFRAMES[timeframe] <= now and int(r[6])/1000 < now]
     except (ValueError, TypeError, IndexError):
         raise FeedError("รูปแบบแท่งราคาของ Binance ไม่ถูกต้อง") from None
-
-
-def gold_bars(timeframe, now=None):
-    key = os.environ.get("TWELVE_DATA_API_KEY", "").strip()
-    if not key:
-        raise FeedError("ทองยังไม่เชื่อมต่อ: ตั้ง TWELVE_DATA_API_KEY ที่มีสิทธิ์ XAU/USD แล้วเริ่มเซิร์ฟเวอร์ใหม่ หรือเลือกแหล่ง MT5")
-    now = time.time() if now is None else now
-    interval = {"M15": "15min", "H1": "1h", "H4": "4h", "D1": "1day"}[timeframe]
-    payload = get_json("https://api.twelvedata.com/time_series", {"symbol": "XAU/USD", "interval": interval,
-                       "outputsize": 1000, "timezone": "UTC", "order": "ASC", "apikey": key})
-    if not isinstance(payload, dict) or payload.get("status") == "error" or "values" not in payload:
-        raise FeedError("Twelve Data ไม่ส่งข้อมูลทอง: ตรวจสอบ API key, สิทธิ์ XAU/USD และโควตาของแพ็กเกจ")
-    try:
-        bars = []
-        for row in payload["values"]:
-            stamp = datetime.fromisoformat(row["datetime"]).replace(tzinfo=timezone.utc).timestamp()
-            if stamp + TIMEFRAMES[timeframe] <= now:
-                bar = {"time": stamp, **{k: float(row[k]) for k in ("open", "high", "low", "close")}}
-                if row.get("volume") not in (None, ""):
-                    bar["volume"] = float(row["volume"])  # XAU/USD usually has no volume; then the volume rule reports "no data"
-                bars.append(bar)
-        return sorted(bars, key=lambda b: b["time"])
-    except (KeyError, ValueError, TypeError):
-        raise FeedError("รูปแบบแท่งราคาของ Twelve Data ไม่ถูกต้อง") from None
 
 
 def demo_bars(symbol, seconds, count=1000):
@@ -126,10 +100,8 @@ def load_bars(source, asset, timeframe, broker_symbol):
                 bars = demo_bars(asset, TIMEFRAMES[timeframe])
             elif source == "mt5":
                 bars = mt5_bars(broker_symbol, timeframe)
-            elif asset == "BTC":
-                bars = binance_bars(timeframe)
             else:
-                bars = gold_bars(timeframe)
+                bars = binance_bars(timeframe)
             validate_bars(bars)
         except (FeedError, ValueError) as exc:
             CACHE[key] = {"expires": time.monotonic()+60, "error": str(exc)}

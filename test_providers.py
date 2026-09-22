@@ -2,7 +2,6 @@ import json
 import os
 import threading
 import unittest
-from datetime import datetime, timezone
 from urllib.error import HTTPError
 from urllib.request import urlopen
 from unittest.mock import patch
@@ -29,22 +28,6 @@ class ProviderTests(unittest.TestCase):
         fetch.return_value = []
         providers.binance_bars('D1', now=0)
         self.assertEqual(fetch.call_args.args[1]['interval'], '1d')
-
-    @patch.dict(os.environ, {'TWELVE_DATA_API_KEY':'test-secret'})
-    @patch('providers.get_json')
-    def test_gold_utc_sort_and_closed_filter(self, fetch):
-        fetch.return_value = {'values':[{'datetime':'2026-01-01 02:00:00','open':'100','high':'102','low':'99','close':'101'}, {'datetime':'2026-01-01 00:00:00','open':'100','high':'102','low':'99','close':'101'}]}
-        now = datetime(2026,1,1,2,30,tzinfo=timezone.utc).timestamp()
-        bars = providers.gold_bars('H1', now)
-        self.assertEqual(len(bars), 1)
-        self.assertEqual(bars[0]['time'], now-9000)
-        self.assertEqual(fetch.call_args.args[1]['timezone'], 'UTC')
-        self.assertNotIn('volume', bars[0])
-
-    @patch.dict(os.environ, {'TWELVE_DATA_API_KEY':''})
-    def test_missing_gold_key_is_explicit(self):
-        with self.assertRaisesRegex(providers.FeedError, 'TWELVE_DATA_API_KEY'):
-            providers.gold_bars('H1')
 
     @patch('providers.urlopen')
     def test_http_errors_never_expose_key(self, fetch):
@@ -84,7 +67,8 @@ class HttpTests(unittest.TestCase):
         with urlopen(self.base+'/api/analysis') as response:
             data=json.load(response)
         self.assertEqual(data['source'], 'demo')
-        self.assertEqual(len(data['assets']), 2)
+        self.assertEqual(len(data['assets']), 1)
+        self.assertEqual(data['assets'][0]['asset'], 'BTC')
         for a in data['assets']:
             self.assertNotIn('error', a)
             self.assertTrue(0 <= a['score'] <= 100)

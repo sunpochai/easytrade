@@ -127,8 +127,8 @@ function bigPicture(a) {
 }
 function card(a) {
   const c = el('article', 'card'), top = el('div', 'cardtop');
-  top.append(el('h2', '', a.asset === 'BTC' ? '₿ Bitcoin' : '◈ Gold'), el('span', 'pill ' + (a.action || ''), a.error ? 'ยังไม่เชื่อมต่อ' : ({BUY: 'BUY · พิจารณาซื้อ', SELL: 'SELL · พิจารณาขาย', REDUCE: 'REDUCE · ลดที่ถือ', WAIT: 'WAIT · รอ'}[a.action]))); c.append(top, el('p', 'muted', `${a.symbol} · ${a.feed}`));
-  if (a.error) { c.append(el('p', 'error', a.error)); if (a.asset === 'GOLD') { const p = el('p', 'empty', 'การอ่านทองผ่าน Twelve Data ต้องตั้ง API key ในเครื่องและมีสิทธิ์ข้อมูล XAU/USD ราคาของโบรกเกอร์อาจต่างจากผู้ให้บริการข้อมูล '); const link = el('a', '', 'ตรวจแพ็กเกจและสร้าง key'); link.href = 'https://twelvedata.com/'; link.target = '_blank'; link.rel = 'noopener noreferrer'; p.append(link); c.append(p); } return c; }
+  top.append(el('h2', '', '₿ Bitcoin'), el('span', 'pill ' + (a.action || ''), a.error ? 'ยังไม่เชื่อมต่อ' : ({BUY: 'BUY · พิจารณาซื้อ', SELL: 'SELL · พิจารณาขาย', REDUCE: 'REDUCE · ลดที่ถือ', WAIT: 'WAIT · รอ'}[a.action]))); c.append(top, el('p', 'muted', `${a.symbol} · ${a.feed}`));
+  if (a.error) { c.append(el('p', 'error', a.error)); return c; }
   const price = el('div', 'price', fmt(a.price)); price.append(el('span', 'unit', a.quote)); c.append(price, el('div', 'muted', 'ราคาปิดแท่ง · ' + date(a.bar_close)), priceChart(a));
   const legend = el('div', 'legend'); [['ราคาปิด', 'close'], ['EMA20', 'fast'], ['EMA50', 'slow']].forEach(([text, name]) => { const item = el('span'); item.append(key(COLORS[name]), text); legend.append(item); }); c.append(legend);
   const m = el('div', 'metrics'); m.append(metric('RSI (14)', fmt(a.rsi)), metric('ATR (14)', fmt(a.atr)), metric('EMA (200)', fmt(a.ema200))); c.append(m);
@@ -145,7 +145,7 @@ async function refresh() {
     initialized = true; lastData = data; $('source').value = data.source; $('timeframe').value = data.timeframe;
     $('banner').textContent = data.source === 'demo' ? 'โหมดสาธิต — ราคาและผลกำไรทั้งหมดมาจากข้อมูลสังเคราะห์ ใช้ตรวจการทำงานเท่านั้น' : 'คะแนนเข้าเงื่อนไขไม่ใช่โอกาสกำไร · อัตราชนะและกำไรด้านล่างเป็นผลย้อนหลังหลังต้นทุนสมมติ ไม่ใช่ผลตอบแทนที่รับรอง';
     const failed = data.assets.filter(a => a.error).length;
-    $('status').textContent = `${data.timeframe} · ประมวลผล ${new Date(data.updated).toLocaleTimeString('th-TH')} · พร้อม ${2 - failed}/2 สินทรัพย์ · รีเฟรชหน้าจอทุก 60 วินาที / API เก็บข้อมูลชั่วคราว 5 นาที`;
+    $('status').textContent = `${data.timeframe} · ประมวลผล ${new Date(data.updated).toLocaleTimeString('th-TH')} · ${failed ? 'โหลดข้อมูลไม่ได้' : 'ข้อมูลพร้อม'} · รีเฟรชหน้าจอทุก 60 วินาที / API เก็บข้อมูลชั่วคราว 5 นาที`;
     $('assets').replaceChildren(...data.assets.map(card)); $('threshold').textContent = data.min_score;
     const s = data.settings; $('assumptions').textContent = `สมมติฐานต่อสินทรัพย์: เสี่ยงถึง Stop ${s.risk_pct}% ของพอร์ตต่อเทรด (รวมต้นทุนโดยประมาณ) · ค่าธรรมเนียม ${s.fee_bps} bps/ข้าง · Slippage + ครึ่งสเปรด ${s.slippage_bps} bps/ข้าง · 1 bp = 0.01% · มูลค่าสถานะไม่เกินทุน 1 เท่า · ถือสูงสุด 48 แท่ง`;
   } catch (e) { lastData = null; $('assets').replaceChildren(); $('status').textContent = 'เชื่อมต่อไม่ได้: ' + e.message; $('banner').textContent = 'ยืนยันข้อมูลล่าสุดไม่ได้ จึงระงับการแสดงคำแนะนำ'; }

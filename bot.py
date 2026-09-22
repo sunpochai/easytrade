@@ -2,7 +2,6 @@
 import argparse
 import json
 import os
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -21,12 +20,12 @@ STATIC = {"/": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascri
 
 
 def build_asset(config, asset, source, timeframe):
-    broker = config.btc_symbol if asset == "BTC" else config.gold_symbol
-    symbol = ("BTCUSDT" if asset == "BTC" else "XAU/USD") if source == "api" else broker
-    feed = ("Binance Spot" if asset == "BTC" else "Twelve Data") if source == "api" else source.upper()
-    allow_short = not (asset == "BTC" and source != "mt5")
+    broker = config.btc_symbol
+    symbol = "BTCUSDT" if source == "api" else broker
+    feed = "Binance Spot" if source == "api" else source.upper()
+    allow_short = source == "mt5"
     metadata = {"asset": asset, "symbol": symbol, "feed": feed,
-                "quote": "USDT" if source == "api" and asset == "BTC" else "USD", "allow_short": allow_short}
+                "quote": "USDT" if source == "api" else "USD", "allow_short": allow_short}
     try:
         bars, fetched = load_bars(source, asset, timeframe, broker)
         settings = {"threshold": config.min_score, "fee_bps": config.fee_bps, "slippage_bps": config.slippage_bps,
@@ -70,8 +69,7 @@ def make_handler(config):
                     self.send_json(400, {"error": "source หรือ timeframe ไม่ถูกต้อง"})
                     return
                 try:
-                    with ThreadPoolExecutor(max_workers=2) as pool:
-                        assets = list(pool.map(lambda asset: build_asset(config, asset, source, timeframe), ("BTC", "GOLD")))
+                    assets = [build_asset(config, "BTC", source, timeframe)]
                     self.send_json(200, {"source": source, "timeframe": timeframe, "assets": assets,
                                         "min_score": config.min_score, "updated": datetime.now(timezone.utc).isoformat(),
                                         "settings": {"risk_pct": config.risk_pct, "fee_bps": config.fee_bps, "slippage_bps": config.slippage_bps}})
@@ -110,7 +108,6 @@ def get_config(args=None):
     parser.add_argument("--source", choices=["api", "demo", "mt5"], default="api")
     parser.add_argument("--timeframe", choices=TIMEFRAMES, default="H1")
     parser.add_argument("--btc-symbol", default="BTCUSD")
-    parser.add_argument("--gold-symbol", default="XAUUSD")
     parser.add_argument("--host", default="127.0.0.1", help="Bind address; use 0.0.0.0 only behind a hosting platform")
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8766")), help="Defaults to $PORT when a host sets it")
     parser.add_argument("--min-score", type=int, choices=range(70, 101), default=85)
