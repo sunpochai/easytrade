@@ -98,7 +98,9 @@ class HttpTests(unittest.TestCase):
         json.dumps(data, allow_nan=False)
 
     def test_host_and_port_defaults(self):
-        self.assertEqual((get_config([]).host, get_config([]).port), ('127.0.0.1', 8766))
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop('PORT', None)  # hosts such as Render export PORT even during build
+            self.assertEqual((get_config([]).host, get_config([]).port), ('127.0.0.1', 8766))
         with patch.dict(os.environ, {'PORT': '10000'}):
             self.assertEqual(get_config([]).port, 10000)
             self.assertEqual(get_config(['--port', '9000', '--host', '0.0.0.0']).port, 9000)
