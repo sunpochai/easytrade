@@ -117,11 +117,34 @@ function bigPicture(a) {
   }
   const v = a.volume_pressure_pct;
   m.append(metric('ปริมาณฝั่งซื้อ 20 แท่ง', v == null ? 'ไม่มีข้อมูล' : pct(v)));
+  m.append(metric('Funding ล่าสุด / 8 ชม.', a.funding_rate == null ? 'ไม่มีข้อมูล' : signed(a.funding_rate * 100, 4) + '%', a.funding_rate == null ? '' : Math.abs(a.funding_rate) > 0.0003 ? 'negative' : ''));
+  m.append(metric('ATR เทียบเฉลี่ย 100 แท่ง', a.atr_ratio == null ? 'ไม่มีข้อมูล' : fmt(a.atr_ratio) + '×'));
   box.append(m);
   const notes = [];
   if (ctx) notes.push(`แท่ง ${tf} ปิดล่าสุด ${date(ctx.bar_close)} ราคาปิด ${fmt(ctx.close)}`);
   if (a.context_error) notes.push(a.context_error);
-  notes.push(v == null ? 'แหล่งข้อมูลนี้ไม่ส่งปริมาณซื้อขาย เงื่อนไขปริมาณจึงไม่ผ่านโดยอัตโนมัติ' : 'สัดส่วนปริมาณของแท่งที่ปิดบวกต่อปริมาณทั้งหมดใน 20 แท่งล่าสุด (ไม่นับแท่งปิดเท่าเดิม)');
+  if (a.funding_error) notes.push(a.funding_error);
+  notes.push(v == null ? 'แหล่งข้อมูลนี้ไม่ส่งปริมาณซื้อขาย เงื่อนไขปริมาณจึงไม่ผ่านโดยอัตโนมัติ' : 'ปริมาณฝั่งซื้อ = สัดส่วนปริมาณของแท่งปิดบวกใน 20 แท่งล่าสุด');
+  notes.push('Funding คือค่าที่ Binance Futures ชำระล่าสุดก่อนแท่งนี้ปิด บวกมาก = ฝั่ง Long จ่ายและแออัด · ' + (a.weekend ? 'แท่งนี้เปิดวันเสาร์–อาทิตย์ (UTC)' : 'แท่งนี้เปิดวันทำการ (UTC)'));
+  box.append(el('p', 'footnote', notes.join(' · ')));
+  return box;
+}
+function signed(value, digits = 2) { return (value > 0 ? '+' : '') + value.toFixed(digits); }
+function liveBox(a) {
+  const box = el('div', 'context'), live = a.live || {};
+  box.append(el('div', 'eyebrow', 'ข้อมูลสด · ไม่อยู่ใน backtest'));
+  const m = el('div', 'metrics'), notes = [];
+  const oi = live.open_interest, depth = live.depth, ethbtc = live.eth_btc, dom = live.dominance;
+  if (oi && oi.value) m.append(metric('Open interest 24 ชม. (Futures)', oi.value.change_24h_pct == null ? fmt(oi.value.open_interest_btc) + ' BTC' : signed(oi.value.change_24h_pct) + '% · ' + fmt(oi.value.open_interest_btc / 1000, 1) + 'k BTC', oi.value.change_24h_pct > 0 ? 'positive' : oi.value.change_24h_pct < 0 ? 'negative' : ''));
+  else { m.append(metric('Open interest 24 ชม.', 'ไม่มีข้อมูล')); if (oi) notes.push('Open interest: ' + oi.error); }
+  if (depth && depth.value) m.append(metric(`Order book ±${depth.value.band_pct}% (bid share)`, pct(depth.value.bid_share_pct) + ' · สเปรด ' + depth.value.spread_bps.toFixed(2) + ' bps'));
+  else { m.append(metric('Order book', 'ไม่มีข้อมูล')); if (depth) notes.push('Order book: ' + depth.error); }
+  if (dom && dom.value) m.append(metric('BTC dominance (CoinGecko)', pct(dom.value.btc_pct)));
+  else { m.append(metric('BTC dominance', 'ไม่มีข้อมูล')); if (dom) notes.push('Dominance: ' + dom.error); }
+  if (ethbtc && ethbtc.value) m.append(metric(`ETH/BTC ${ethbtc.value.days} วัน`, signed(ethbtc.value.change_pct) + '%', ethbtc.value.change_pct > 0 ? 'negative' : 'positive'));
+  else { m.append(metric('ETH/BTC 20 วัน', 'ไม่มีข้อมูล')); if (ethbtc) notes.push('ETH/BTC: ' + ethbtc.error); }
+  box.append(m);
+  notes.push('Open interest และ order book จาก Binance, dominance จาก CoinGecko ใช้ดูประกอบและเป็นตัวระงับสัญญาณเท่านั้น ไม่ให้คะแนน เพราะไม่มีประวัติย้อนหลังพอจะทดสอบ · ETH/BTC ขึ้น = เงินไหลจาก BTC ไป altcoin');
   box.append(el('p', 'footnote', notes.join(' · ')));
   return box;
 }
@@ -132,10 +155,10 @@ function card(a) {
   const price = el('div', 'price', fmt(a.price)); price.append(el('span', 'unit', a.quote)); c.append(price, el('div', 'muted', 'ราคาปิดแท่ง · ' + date(a.bar_close)), priceChart(a));
   const legend = el('div', 'legend'); [['ราคาปิด', 'close'], ['EMA20', 'fast'], ['EMA50', 'slow']].forEach(([text, name]) => { const item = el('span'); item.append(key(COLORS[name]), text); legend.append(item); }); c.append(legend);
   const m = el('div', 'metrics'); m.append(metric('RSI (14)', fmt(a.rsi)), metric('ATR (14)', fmt(a.atr)), metric('EMA (200)', fmt(a.ema200))); c.append(m);
-  c.append(bigPicture(a));
+  c.append(bigPicture(a), liveBox(a));
   const score = el('div', 'scorebox'), row = el('div', 'scorerow'); row.append(el('span', '', 'คะแนนเข้าเงื่อนไข · ' + a.bias), el('b', '', a.score + '%')); const progress = el('progress'); progress.max = 100; progress.value = a.score; progress.setAttribute('aria-label', 'คะแนนเข้าเงื่อนไข'); score.append(row, progress, el('div', 'footnote', `ไม่ใช่โอกาสกำไร · BUY ${a.buy_score}% / SELL ${a.sell_score}%`)); c.append(score, el('div', 'reason', a.reason));
   const levels = el('div', 'levels'); [['Stop Loss', a.stop, a.stop_move_pct], ['Take Profit', a.target, a.target_move_pct]].forEach(([k, v, p]) => { const item = el('div', 'level'); item.append(el('span', 'muted', k), el('b', '', fmt(v)), el('span', 'footnote', p == null ? 'ไม่มีแผนเปิดสถานะ' : 'ระยะราคา ' + pct(p))); levels.append(item); }); c.append(levels);
-  const checks = el('details'); checks.append(el('summary', '', 'เหตุผลคะแนนและสถานะข้อมูล')); const list = el('ul', 'checks'); a.checks.forEach(check => list.append(el('li', check.pass ? 'pass' : 'fail', `${check.pass ? '✓' : '○'} ${check.name} (${check.weight}%)` + (check.note ? ' · ' + check.note : '')))); checks.append(list, el('p', 'footnote', 'ดึงจากแหล่งข้อมูล: ' + date(a.fetched_at)), el('p', 'footnote', a.allow_short ? 'จำลอง Long/Short เชิงทฤษฎี ไม่รวม Swap/Funding' : 'BTC Spot จำลอง Long เท่านั้น SELL ใช้ปิด/ลดสถานะที่มี')); c.append(checks, backtest(a)); return c;
+  const checks = el('details'); checks.append(el('summary', '', 'เหตุผลคะแนนและสถานะข้อมูล')); const list = el('ul', 'checks'); a.checks.forEach(check => list.append(el('li', check.pass ? 'pass' : 'fail', `${check.pass ? '✓' : '○'} ${check.name} (${check.weight}%)` + (check.note ? ' · ' + check.note : '')))); (a.guards || []).forEach(g => list.append(el('li', g.pass ? 'pass' : 'fail', `${g.pass ? '✓' : '⛔'} ตัวระงับสด: ${g.name}` + (g.note ? ' · ' + g.note : '')))); checks.append(list, el('p', 'footnote', 'ดึงจากแหล่งข้อมูล: ' + date(a.fetched_at)), el('p', 'footnote', a.allow_short ? 'จำลอง Long/Short เชิงทฤษฎี ไม่รวม Swap/Funding' : 'BTC Spot จำลอง Long เท่านั้น SELL ใช้ปิด/ลดสถานะที่มี')); c.append(checks, backtest(a)); return c;
 }
 async function refresh() {
   if (busy) return; busy = true; ['refresh', 'source', 'timeframe', 'download'].forEach(id => $(id).disabled = true); $('status').textContent = 'กำลังอ่านข้อมูลและทดสอบย้อนหลัง…'; $('assets').classList.add('loading');

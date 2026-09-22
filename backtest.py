@@ -99,8 +99,8 @@ def simulate(bars, seconds, *, threshold=85, fee_bps=10, slippage_bps=5,
             "recent_trades": trades[-20:], "equity_curve": sampled}
 
 
-def evaluate(bars, seconds, context=None, **settings):
-    values = {**indicators(bars), "context": context}
+def evaluate(bars, seconds, context=None, funding=None, **settings):
+    values = {**indicators(bars), "context": context, "funding": funding}
     split = max(200, int(len(bars)*0.7))
     earlier = simulate(bars, seconds, end=split, values=values, **settings)
     holdout = simulate(bars, seconds, start=split, values=values, **settings)
@@ -109,4 +109,7 @@ def evaluate(bars, seconds, context=None, **settings):
             "assumptions": {**settings, "initial_equity": 10000, "max_notional_multiple": 1,
                             "max_holding_bars": 48, "drawdown_sampling": "bar_close_liquidation_value",
                             "same_bar_exit": "stop_first", "funding_included": False,
-                            "higher_timeframe_context": context is not None, "higher_bars_closed_only": True}}
+                            "higher_timeframe_context": context is not None, "higher_bars_closed_only": True,
+                            "funding_rate_filter": funding is not None, "funding_settled_only": True,
+                            "volatility_regime_filter": True, "weekend_filter": True,
+                            "live_only_guards_not_backtested": ["order_book_spread", "macro_events"]}}
