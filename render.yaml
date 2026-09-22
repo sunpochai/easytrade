@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: easytrade
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: "python -m unittest"
+    startCommand: "python bot.py --host 0.0.0.0 --source api"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: TWELVE_DATA_API_KEY
+        sync: false

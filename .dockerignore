@@ -1,0 +1,4 @@
+__pycache__
+artifacts
+*.md
+test_*.py

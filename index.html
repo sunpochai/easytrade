@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="th">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>EasyTrade · บอทแนะนำ BTC & Gold</title><meta name="theme-color" content="#0a111d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="EasyTrade"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body><main>
+<header><div><div class="eyebrow">EASYTRADE / RESEARCH DESK</div><h1>BTC & Gold <span>Recommendation Bot</span></h1><p class="muted">อ่านแนวโน้ม · วางแผนราคา · ตรวจผลย้อนหลัง</p></div><span class="mode">วิเคราะห์เท่านั้น</span></header>
+<section class="toolbar" aria-label="ตั้งค่าข้อมูล">
+<label>แหล่งข้อมูล<select id="source"><option value="api">API ราคาจริง</option><option value="demo">ข้อมูลสาธิต</option><option value="mt5">MetaTrader 5</option></select></label>
+<label>กรอบเวลา<select id="timeframe"><option value="M15">15 นาที</option><option value="H1" selected>1 ชั่วโมง</option><option value="H4">4 ชั่วโมง</option></select></label>
+<button id="refresh">อัปเดตข้อมูล</button><button id="download" class="secondary" disabled>บันทึกผล JSON</button>
+</section>
+<div class="banner" id="banner">กำลังตรวจสอบแหล่งข้อมูล…</div>
+<p class="muted status" id="status" role="status" aria-live="polite">กำลังโหลด…</p>
+<div class="grid" id="assets"></div>
+<section class="card guide"><div class="eyebrow">METHOD / TRANSPARENCY</div><h2>คะแนนสูง ≠ โอกาสกำไรสูง</h2><p>คะแนนคือสัดส่วนเงื่อนไขที่ผ่านจากกฎวิเคราะห์เทคนิค ไม่ใช่ความน่าจะเป็นว่าจะชนะ ระบบยังไม่มีโมเดลที่สอบเทียบโอกาสทำกำไร และไม่ได้วิเคราะห์ข่าว</p>
+<div class="guidegrid"><div><h3>กรองก่อนแนะนำ</h3><p class="muted">EMA20/50/200 ดูแนวโน้ม · RSI14 ดูโมเมนตัม · ความชัน EMA50 และระยะราคาเทียบ ATR14 กรองจังหวะเข้า · ภาพใหญ่จากกรอบเวลาถัดขึ้นไป (M15→H1, H1→H4, H4→D1) ต้องไปทางเดียวกัน · ปริมาณซื้อขาย 20 แท่งต้องเอียงไปทางเดียวกัน ต้องผ่านเงื่อนไขบังคับและคะแนนอย่างน้อย <b id="threshold">85</b>%</p></div><div><h3>ทดสอบตามลำดับเวลา</h3><p class="muted">แยกข้อมูลช่วงแรก 70% กับช่วงล่าสุด 30% ใช้กฎคงที่ ไม่เลือกค่าที่ให้กำไรสูงสุด เปิดจำลองที่ราคาเปิดแท่งถัดไป หากแตะ Stop และ Target ในแท่งเดียวกันนับ Stop ก่อน</p></div><div><h3>แผนราคาและต้นทุน</h3><p class="muted">Stop 1.5 × ATR · Target 3 × ATR อ้างอิงราคาปิด ผลตอบแทนต่อความเสี่ยงก่อนต้นทุน 2:1 ระยะถึง Target ไม่ใช่กำไรพอร์ต ค่าใช้จ่ายเป็นสมมติฐานที่ต้องปรับให้ตรงโบรกเกอร์</p></div></div>
+<p class="muted" id="assumptions"></p><p class="muted">Drawdown วัดมูลค่าพอร์ตหลังต้นทุนที่ราคาปิดแต่ละแท่ง จึงอาจต่ำกว่าการขาดทุนระหว่างแท่งจริง · ไม่รวม Funding/Swap ภาษี และข้อจำกัด lot · จำนวน 30 เทรดเป็นเพียงเกณฑ์เตือนตัวอย่างน้อย ไม่ได้ยืนยันว่ากลยุทธ์น่าเชื่อถือ</p>
+</section><footer class="muted">ใช้ข้อมูลแท่งราคาปิดเท่านั้น · ไม่มีการส่งออร์เดอร์จริง · ผลย้อนหลังไม่รับรองผลในอนาคต · XAU/USD คือทองคำโลก ไม่ใช่ทองไทย</footer>
+</main></body></html>
