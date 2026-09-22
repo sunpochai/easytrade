@@ -67,6 +67,7 @@ class HttpTests(unittest.TestCase):
         with urlopen(self.base+'/api/analysis') as response:
             data=json.load(response)
         self.assertEqual(data['source'], 'demo')
+        self.assertEqual(data['version'], 'trend-pullback-v4')
         self.assertEqual(len(data['assets']), 1)
         self.assertEqual(data['assets'][0]['asset'], 'BTC')
         for a in data['assets']:
@@ -110,20 +111,27 @@ class HttpTests(unittest.TestCase):
         self.assertEqual((depth["bid_depth_btc"], depth["ask_depth_btc"]), (5, 2))
         self.assertAlmostEqual(depth["bid_share_pct"], 500 / 7)
 
+    def test_dominance_falls_back_to_coinpaprika(self):
+        with patch('providers.coingecko_dominance', side_effect=providers.FeedError('rate limited')), \
+             patch('providers.get_json', return_value={"bitcoin_dominance_percentage": "56.5"}):
+            value = providers.dominance()
+        self.assertEqual((value['btc_pct'], value['source']), (56.5, 'CoinPaprika'))
+
     def test_live_data_failures_are_isolated(self):
         with patch('providers.binance_depth', side_effect=providers.FeedError('book down')), \
              patch('providers.binance_open_interest', return_value={"open_interest_btc": 1.0, "value_usd": 1.0, "change_24h_pct": 0.0, "time": 0, "hours": 24}), \
              patch('providers.binance_eth_btc', return_value={"ratio": 0.03, "change_pct": 1.0, "days": 20}), \
-             patch('providers.coingecko_dominance', side_effect=providers.FeedError('gecko down')):
+             patch('providers.coingecko_dominance', side_effect=providers.FeedError('gecko down')), \
+             patch('providers.coinpaprika_dominance', side_effect=providers.FeedError('paprika down')):
             providers.LIVE_LOADERS.update(depth=providers.binance_depth, open_interest=providers.binance_open_interest,
-                                          eth_btc=providers.binance_eth_btc, dominance=providers.coingecko_dominance)
+                                          eth_btc=providers.binance_eth_btc)
             try:
                 live = providers.load_live('api')
             finally:
                 providers.LIVE_LOADERS.update(depth=providers.binance_depth, open_interest=providers.binance_open_interest,
-                                              eth_btc=providers.binance_eth_btc, dominance=providers.coingecko_dominance)
+                                              eth_btc=providers.binance_eth_btc)
         self.assertEqual(live['depth'], {'error': 'book down'})
-        self.assertEqual(live['dominance'], {'error': 'gecko down'})
+        self.assertEqual(live['dominance'], {'error': 'CoinGecko: gecko down / CoinPaprika: paprika down'})
         self.assertEqual(live['eth_btc']['value']['days'], 20)
         guards = live_guards(get_config(['--source', 'demo']), live, 0)
         self.assertFalse(guards[0]['pass'])
@@ -152,6 +160,12 @@ class HttpTests(unittest.TestCase):
             self.assertIn('9.00 bps', wide['reason'])
             clear = build_asset(config, 'BTC', 'demo', 'H1', now=fomc['time'] + 86400)
             self.assertEqual(clear['action'], 'BUY')
+
+    def test_pwa_and_ui_versions_match_strategy(self):
+        from strategy import VERSION
+        root = ROOT
+        self.assertIn(f"const VERSION = '{VERSION}'", (root / 'sw.js').read_text(encoding='utf-8'))
+        self.assertIn(f"const UI_VERSION = '{VERSION}'", (root / 'app.js').read_text(encoding='utf-8'))
 
     def test_invalid_options_400(self):
         with self.assertRaises(HTTPError) as caught:

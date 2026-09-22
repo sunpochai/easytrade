@@ -123,9 +123,29 @@ def coingecko_dominance():
     try:
         share = payload["data"]["market_cap_percentage"]
         return {"btc_pct": float(share["btc"]), "eth_pct": float(share.get("eth", 0.0)),
-                "time": float(payload["data"]["updated_at"])}
+                "time": float(payload["data"]["updated_at"]), "source": "CoinGecko"}
     except (KeyError, ValueError, TypeError):
         raise FeedError("รูปแบบข้อมูล CoinGecko ไม่ถูกต้อง") from None
+
+
+def coinpaprika_dominance():
+    payload = get_json("https://api.coinpaprika.com/v1/global", {})
+    try:
+        return {"btc_pct": float(payload["bitcoin_dominance_percentage"]), "eth_pct": None,
+                "time": time.time(), "source": "CoinPaprika"}
+    except (KeyError, ValueError, TypeError):
+        raise FeedError("รูปแบบข้อมูล CoinPaprika ไม่ถูกต้อง") from None
+
+
+def dominance():
+    """Two keyless sources; hosted IPs are often rate-limited by one of them."""
+    try:
+        return coingecko_dominance()
+    except FeedError as first:
+        try:
+            return coinpaprika_dominance()
+        except FeedError as second:
+            raise FeedError(f"CoinGecko: {first} / CoinPaprika: {second}") from None
 
 
 def demo_funding(seconds, count=1000):
@@ -143,7 +163,7 @@ def demo_live():
             "depth": {"mid": 60000.0, "spread_bps": 0.2, "bid_depth_btc": 40.0, "ask_depth_btc": 35.0, "bid_share_pct": 53.3,
                       "band_pct": 0.5, "time": time.time()},
             "eth_btc": {"ratio": 0.032, "change_pct": rng.uniform(-5, 5), "days": 20},
-            "dominance": {"btc_pct": 57.0, "eth_pct": 12.0, "time": time.time()}}
+            "dominance": {"btc_pct": 57.0, "eth_pct": 12.0, "time": time.time(), "source": "demo"}}
 
 
 def demo_bars(symbol, seconds, count=1000):
@@ -222,7 +242,7 @@ def load_funding(source, seconds):
 
 
 LIVE_LOADERS = {"open_interest": binance_open_interest, "depth": binance_depth,
-                "eth_btc": binance_eth_btc, "dominance": coingecko_dominance}
+                "eth_btc": binance_eth_btc, "dominance": dominance}
 LIVE_TTL = {"open_interest": 300, "depth": 60, "eth_btc": 900, "dominance": 900}
 
 

@@ -131,7 +131,7 @@ def make_handler(config):
                     return
                 try:
                     assets = [build_asset(config, "BTC", source, timeframe)]
-                    self.send_json(200, {"source": source, "timeframe": timeframe, "assets": assets,
+                    self.send_json(200, {"source": source, "timeframe": timeframe, "assets": assets, "version": VERSION,
                                         "min_score": config.min_score, "updated": datetime.now(timezone.utc).isoformat(),
                                         "settings": {"risk_pct": config.risk_pct, "fee_bps": config.fee_bps, "slippage_bps": config.slippage_bps}})
                 except Exception:

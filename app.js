@@ -2,6 +2,7 @@
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const SURFACE = '#111d2e';
+const UI_VERSION = 'trend-pullback-v4'; // must match strategy.VERSION; a mismatch means this file is a stale copy
 const COLORS = {close: '#22a47f', fast: '#bf862c', slow: '#6a80ec', equity: '#6a80ec', grid: '#25324a', base: '#3d4d6b'};
 const INITIAL_EQUITY = 10000;
 const fmt = n => n == null ? '—' : Number(n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -139,12 +140,12 @@ function liveBox(a) {
   else { m.append(metric('Open interest 24 ชม.', 'ไม่มีข้อมูล')); if (oi) notes.push('Open interest: ' + oi.error); }
   if (depth && depth.value) m.append(metric(`Order book ±${depth.value.band_pct}% (bid share)`, pct(depth.value.bid_share_pct) + ' · สเปรด ' + depth.value.spread_bps.toFixed(2) + ' bps'));
   else { m.append(metric('Order book', 'ไม่มีข้อมูล')); if (depth) notes.push('Order book: ' + depth.error); }
-  if (dom && dom.value) m.append(metric('BTC dominance (CoinGecko)', pct(dom.value.btc_pct)));
+  if (dom && dom.value) m.append(metric('BTC dominance (' + (dom.value.source || 'CoinGecko') + ')', pct(dom.value.btc_pct)));
   else { m.append(metric('BTC dominance', 'ไม่มีข้อมูล')); if (dom) notes.push('Dominance: ' + dom.error); }
   if (ethbtc && ethbtc.value) m.append(metric(`ETH/BTC ${ethbtc.value.days} วัน`, signed(ethbtc.value.change_pct) + '%', ethbtc.value.change_pct > 0 ? 'negative' : 'positive'));
   else { m.append(metric('ETH/BTC 20 วัน', 'ไม่มีข้อมูล')); if (ethbtc) notes.push('ETH/BTC: ' + ethbtc.error); }
   box.append(m);
-  notes.push('Open interest และ order book จาก Binance, dominance จาก CoinGecko ใช้ดูประกอบและเป็นตัวระงับสัญญาณเท่านั้น ไม่ให้คะแนน เพราะไม่มีประวัติย้อนหลังพอจะทดสอบ · ETH/BTC ขึ้น = เงินไหลจาก BTC ไป altcoin');
+  notes.push('Open interest และ order book จาก Binance, dominance จาก CoinGecko หรือ CoinPaprika ใช้ดูประกอบและเป็นตัวระงับสัญญาณเท่านั้น ไม่ให้คะแนน เพราะไม่มีประวัติย้อนหลังพอจะทดสอบ · ETH/BTC ขึ้น = เงินไหลจาก BTC ไป altcoin');
   box.append(el('p', 'footnote', notes.join(' · ')));
   return box;
 }
@@ -169,6 +170,8 @@ async function refresh() {
     $('banner').textContent = data.source === 'demo' ? 'โหมดสาธิต — ราคาและผลกำไรทั้งหมดมาจากข้อมูลสังเคราะห์ ใช้ตรวจการทำงานเท่านั้น' : 'คะแนนเข้าเงื่อนไขไม่ใช่โอกาสกำไร · อัตราชนะและกำไรด้านล่างเป็นผลย้อนหลังหลังต้นทุนสมมติ ไม่ใช่ผลตอบแทนที่รับรอง';
     const failed = data.assets.filter(a => a.error).length;
     $('status').textContent = `${data.timeframe} · ประมวลผล ${new Date(data.updated).toLocaleTimeString('th-TH')} · ${failed ? 'โหลดข้อมูลไม่ได้' : 'ข้อมูลพร้อม'} · รีเฟรชหน้าจอทุก 60 วินาที / API เก็บข้อมูลชั่วคราว 5 นาที`;
+    $('version').textContent = 'กฎ ' + (data.version || '?') + ' · หน้าเว็บ ' + UI_VERSION;
+    if (data.version && data.version !== UI_VERSION) { $('version').textContent += ' · หน้าเว็บที่แคชไว้เป็นคนละเวอร์ชันกับเซิร์ฟเวอร์ กำลังอัปเดต…'; updateApp(); }
     $('assets').replaceChildren(...data.assets.map(card)); $('threshold').textContent = data.min_score;
     const s = data.settings; $('assumptions').textContent = `สมมติฐานต่อสินทรัพย์: เสี่ยงถึง Stop ${s.risk_pct}% ของพอร์ตต่อเทรด (รวมต้นทุนโดยประมาณ) · ค่าธรรมเนียม ${s.fee_bps} bps/ข้าง · Slippage + ครึ่งสเปรด ${s.slippage_bps} bps/ข้าง · 1 bp = 0.01% · มูลค่าสถานะไม่เกินทุน 1 เท่า · ถือสูงสุด 48 แท่ง`;
   } catch (e) { lastData = null; $('assets').replaceChildren(); $('status').textContent = 'เชื่อมต่อไม่ได้: ' + e.message; $('banner').textContent = 'ยืนยันข้อมูลล่าสุดไม่ได้ จึงระงับการแสดงคำแนะนำ'; }
@@ -176,6 +179,13 @@ async function refresh() {
 }
 $('refresh').onclick = refresh; ['source', 'timeframe'].forEach(id => $(id).onchange = () => { initialized = true; refresh(); });
 $('download').onclick = () => { if (!lastData) return; const blob = new Blob([JSON.stringify(lastData, null, 2)], {type: 'application/json'}), url = URL.createObjectURL(blob), link = el('a'); link.href = url; link.download = `easytrade-${lastData.source}-${lastData.timeframe}-${Date.now()}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+let swRegistration = null, hadController = false;
+function updateApp() { if (swRegistration) swRegistration.update().catch(() => {}); else if (!('serviceWorker' in navigator)) location.reload(); }
+if ('serviceWorker' in navigator) {
+  hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('/sw.js').then(reg => { swRegistration = reg; reg.update().catch(() => {}); }).catch(() => {});
+  // a new worker took over (new version deployed): reload once so the page and its scripts match
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) location.reload(); hadController = true; });
+}
 refresh(); setInterval(refresh, 60000);
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
-document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { updateApp(); refresh(); } });

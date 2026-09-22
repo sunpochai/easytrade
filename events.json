@@ -1,5 +1,5 @@
 {
-  "_comment": "Scheduled macro announcements (UTC). The bot withholds signals from window_before_min before to window_after_min after each. Verify FOMC dates at federalreserve.gov and add CPI/NFP releases yourself if wanted.",
+  "_comment": "Scheduled macro announcements (UTC). The bot withholds signals from window_before_min before to window_after_min after each. FOMC statements are released 14:00 US Eastern on the second meeting day (18:00 UTC in daylight time, 19:00 UTC in standard time). 2026-2027 dates checked against federalreserve.gov/monetarypolicy/fomccalendars.htm on 2026-09-22; the Fed calls each date tentative. Add CPI/NFP releases yourself if wanted.",
   "window_before_min": 60,
   "window_after_min": 120,
   "events": [
@@ -10,6 +10,14 @@
     {"name": "FOMC statement", "time": "2026-07-29T18:00:00Z"},
     {"name": "FOMC statement", "time": "2026-09-16T18:00:00Z"},
     {"name": "FOMC statement", "time": "2026-10-28T18:00:00Z"},
-    {"name": "FOMC statement", "time": "2026-12-09T19:00:00Z"}
+    {"name": "FOMC statement", "time": "2026-12-09T19:00:00Z"},
+    {"name": "FOMC statement", "time": "2027-01-27T19:00:00Z"},
+    {"name": "FOMC statement", "time": "2027-03-17T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2027-04-28T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2027-06-09T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2027-07-28T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2027-09-15T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2027-10-27T18:00:00Z"},
+    {"name": "FOMC statement", "time": "2027-12-08T19:00:00Z"}
   ]
 }
